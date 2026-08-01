@@ -1,4 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { User, onAuthStateChanged } from 'firebase/auth';
+import { collection, onSnapshot, setDoc, doc, getDocs } from 'firebase/firestore';
+import { 
+  auth, 
+  db, 
+  signInWithGoogle, 
+  logoutUser, 
+  handleFirestoreError, 
+  OperationType,
+  testFirestoreConnection 
+} from './lib/firebase';
 import { 
   YouTubeChannel, 
   VideoProject, 
@@ -36,6 +47,9 @@ import { ChannelGuideModal } from './components/modals/ChannelGuideModal';
 import { NewPipelineModal } from './components/modals/NewPipelineModal';
 
 export const App: React.FC = () => {
+  // Firebase Auth State
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
   // Theme State
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
@@ -87,6 +101,112 @@ export const App: React.FC = () => {
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
+  // Firebase Auth & Firestore Sync
+  useEffect(() => {
+    testFirestoreConnection();
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user);
+      if (user) {
+        try {
+          await setDoc(doc(db, 'users', user.uid), {
+            uid: user.uid,
+            email: user.email || '',
+            displayName: user.displayName || '',
+            photoURL: user.photoURL || '',
+            createdAt: new Date().toISOString()
+          }, { merge: true });
+        } catch (err) {
+          console.error('Error saving user profile:', err);
+        }
+
+        const channelsRef = collection(db, 'users', user.uid, 'channels');
+        const videosRef = collection(db, 'users', user.uid, 'videos');
+        const researchRef = collection(db, 'users', user.uid, 'researchTopics');
+        const pipelinesRef = collection(db, 'users', user.uid, 'pipelines');
+
+        // Seed initial channels if new user
+        try {
+          const channelsSnap = await getDocs(channelsRef);
+          if (channelsSnap.empty) {
+            for (const chan of INITIAL_CHANNELS) {
+              await setDoc(doc(db, 'users', user.uid, 'channels', chan.id), { ...chan, userId: user.uid });
+            }
+            for (const vid of INITIAL_VIDEOS) {
+              await setDoc(doc(db, 'users', user.uid, 'videos', vid.id), { ...vid, userId: user.uid });
+            }
+            for (const top of INITIAL_RESEARCH_TOPICS) {
+              await setDoc(doc(db, 'users', user.uid, 'researchTopics', top.id), { ...top, userId: user.uid });
+            }
+            for (const pipe of INITIAL_PIPELINES) {
+              await setDoc(doc(db, 'users', user.uid, 'pipelines', pipe.id), { ...pipe, userId: user.uid });
+            }
+          }
+        } catch (e) {
+          console.error('Error seeding initial data:', e);
+        }
+
+        // Real-time Firestore sync listeners
+        const unsubChannels = onSnapshot(channelsRef, (snapshot) => {
+          if (!snapshot.empty) {
+            const list: YouTubeChannel[] = [];
+            snapshot.forEach((d) => list.push(d.data() as YouTubeChannel));
+            setChannels(list);
+          }
+        }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${user.uid}/channels`));
+
+        const unsubVideos = onSnapshot(videosRef, (snapshot) => {
+          if (!snapshot.empty) {
+            const list: VideoProject[] = [];
+            snapshot.forEach((d) => list.push(d.data() as VideoProject));
+            setVideos(list);
+          }
+        }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${user.uid}/videos`));
+
+        const unsubResearch = onSnapshot(researchRef, (snapshot) => {
+          if (!snapshot.empty) {
+            const list: ResearchTopic[] = [];
+            snapshot.forEach((d) => list.push(d.data() as ResearchTopic));
+            setResearchTopics(list);
+          }
+        }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${user.uid}/researchTopics`));
+
+        const unsubPipelines = onSnapshot(pipelinesRef, (snapshot) => {
+          if (!snapshot.empty) {
+            const list: PipelineItem[] = [];
+            snapshot.forEach((d) => list.push(d.data() as PipelineItem));
+            setPipelines(list);
+          }
+        }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${user.uid}/pipelines`));
+
+        return () => {
+          unsubChannels();
+          unsubVideos();
+          unsubResearch();
+          unsubPipelines();
+        };
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Auth Handlers
+  const handleSignInGoogle = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      console.error('Google Sign-In failed:', err);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await logoutUser();
+    } catch (err) {
+      console.error('Sign Out failed:', err);
+    }
   };
 
   // Channel Actions
@@ -196,6 +316,9 @@ export const App: React.FC = () => {
         onOpenVideoStudio={() => setActiveView('studio')}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        user={currentUser}
+        onSignInGoogle={handleSignInGoogle}
+        onSignOut={handleSignOut}
       />
 
       <div className="flex-1 flex overflow-hidden">

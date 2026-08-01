@@ -1,0 +1,115 @@
+{
+  "entities": {
+    "user": {
+      "title": "User",
+      "description": "User profile details",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["uid"]
+    },
+    "channel": {
+      "title": "Channel",
+      "description": "YouTube Channel details connected by user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "handle": { "type": "string" },
+        "subscriberCount": { "type": "string" },
+        "totalViews": { "type": "string" },
+        "videoCount": { "type": "number" },
+        "avatar": { "type": "string" },
+        "isConnected": { "type": "boolean" },
+        "folder": { "type": "string" },
+        "lastSyncAt": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["id", "title", "userId"]
+    },
+    "video": {
+      "title": "Video Project",
+      "description": "Video production workflow project",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "channelId": { "type": "string" },
+        "title": { "type": "string" },
+        "topic": { "type": "string" },
+        "script": { "type": "string" },
+        "status": { "type": "string" },
+        "targetPublishDate": { "type": "string" },
+        "thumbnailUrl": { "type": "string" },
+        "views": { "type": "number" },
+        "likes": { "type": "number" },
+        "CTR": { "type": "string" },
+        "retentionRate": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["id", "channelId", "title", "userId"]
+    },
+    "researchTopic": {
+      "title": "Research Topic",
+      "description": "Niche research idea or topic",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "niche": { "type": "string" },
+        "searchVolume": { "type": "string" },
+        "competitionScore": { "type": "number" },
+        "viralScore": { "type": "number" },
+        "keywords": { "type": "array" },
+        "outline": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["id", "title", "userId"]
+    },
+    "pipeline": {
+      "title": "Pipeline Item",
+      "description": "Automation flow for content research and publishing",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "channelId": { "type": "string" },
+        "trigger": { "type": "string" },
+        "currentStage": { "type": "string" },
+        "autoApprove": { "type": "boolean" },
+        "lastRunAt": { "type": "string" },
+        "nextRunAt": { "type": "string" },
+        "itemsProcessed": { "type": "number" },
+        "status": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["id", "name", "channelId", "userId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/user" },
+      "description": "User document storing basic profile info"
+    },
+    "/users/{userId}/channels/{channelId}": {
+      "schema": { "$ref": "#/entities/channel" },
+      "description": "YouTube Channels owned or connected by user"
+    },
+    "/users/{userId}/videos/{videoId}": {
+      "schema": { "$ref": "#/entities/video" },
+      "description": "Video projects in user workspace"
+    },
+    "/users/{userId}/researchTopics/{topicId}": {
+      "schema": { "$ref": "#/entities/researchTopic" },
+      "description": "Research topic ideas for user"
+    },
+    "/users/{userId}/pipelines/{pipelineId}": {
+      "schema": { "$ref": "#/entities/pipeline" },
+      "description": "Automation pipelines configured by user"
+    }
+  }
+}
