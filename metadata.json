@@ -1,0 +1,6 @@
+{
+  "name": "TubularAI - Multi-Channel YouTube Management Platform",
+  "description": "Enterprise AI-powered dashboard for automating, researching, producing, and managing multiple YouTube channels with official YouTube API compliance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
