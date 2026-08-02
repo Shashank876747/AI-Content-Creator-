@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { YouTubeChannel } from '../../types';
+import { User } from 'firebase/auth';
 import { 
   Tv, 
   Plus, 
@@ -13,7 +14,8 @@ import {
   Info,
   Layers,
   BarChart3,
-  Globe
+  Globe,
+  Trash2
 } from 'lucide-react';
 
 interface ChannelManagerViewProps {
@@ -24,6 +26,9 @@ interface ChannelManagerViewProps {
   onOpenChannelGuideModal: () => void;
   onUpdateChannelFolder: (channelId: string, folder: string) => void;
   workspaceFolders: string[];
+  onClearAllChannels?: () => void;
+  onSyncGoogleChannels?: () => void;
+  user?: User | null;
 }
 
 export const ChannelManagerView: React.FC<ChannelManagerViewProps> = ({
@@ -34,6 +39,9 @@ export const ChannelManagerView: React.FC<ChannelManagerViewProps> = ({
   onOpenChannelGuideModal,
   onUpdateChannelFolder,
   workspaceFolders,
+  onClearAllChannels,
+  onSyncGoogleChannels,
+  user,
 }) => {
   const [selectedFolderFilter, setSelectedFolderFilter] = useState('ALL');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -70,33 +78,51 @@ export const ChannelManagerView: React.FC<ChannelManagerViewProps> = ({
   return (
     <div className="space-y-8 animate-in fade-in duration-200">
       {/* Header Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
         <div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
             <Tv className="w-7 h-7 text-red-500" />
             <span>YouTube Channel Hub</span>
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Connect, group into workspaces, and monitor health for multiple YouTube channels using YouTube Data API v3 OAuth.
+            Manage connected YouTube channels, sync Google account channels, group into workspaces, and audit health metrics.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={onSyncGoogleChannels}
+            className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-500/20 transition active:scale-95"
+            id="sync-google-channels-btn"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span>Sync Google Account Channels</span>
+          </button>
+
+          <button
+            onClick={onClearAllChannels}
+            className="px-3.5 py-2 rounded-xl border border-rose-300 dark:border-rose-800/60 bg-rose-50 dark:bg-rose-950/30 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 flex items-center gap-1.5 transition active:scale-95"
+            id="clear-all-channels-btn"
+          >
+            <Trash2 className="w-4 h-4" />
+            <span>Clear All Channels</span>
+          </button>
+
           <button
             onClick={onOpenChannelGuideModal}
             className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-1.5 transition"
           >
             <Info className="w-4 h-4 text-amber-500" />
-            <span>Channel Creation Guide</span>
+            <span>Guide</span>
           </button>
 
           <button
             onClick={handleConnectOAuthPopup}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-red-500/20 transition active:scale-95"
+            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-red-500/20 transition active:scale-95"
             id="connect-youtube-oauth-btn"
           >
             <Plus className="w-4 h-4" />
-            <span>Connect YouTube Channel</span>
+            <span>Connect Channel</span>
           </button>
         </div>
       </div>
@@ -144,8 +170,37 @@ export const ChannelManagerView: React.FC<ChannelManagerViewProps> = ({
       </div>
 
       {/* Channels Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-        {filteredChannels.map((channel) => {
+      {filteredChannels.length === 0 ? (
+        <div className="p-12 text-center rounded-3xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 space-y-4 shadow-sm">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center">
+            <Tv className="w-8 h-8" />
+          </div>
+          <div className="max-w-md mx-auto">
+            <h3 className="text-lg font-black text-slate-900 dark:text-slate-100">No YouTube Channels Connected</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              All channels have been cleared. Click below to sync YouTube channels directly from your Google Account or add a channel manually.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <button
+              onClick={onSyncGoogleChannels}
+              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition active:scale-95"
+            >
+              <RefreshCw className="w-4 h-4" />
+              <span>Sync Channels from Google Account</span>
+            </button>
+            <button
+              onClick={onOpenNewChannelModal}
+              className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 transition"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Connect Custom Channel</span>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+          {filteredChannels.map((channel) => {
           const isSelected = activeChannel?.id === channel.id;
           return (
             <div
@@ -266,6 +321,7 @@ export const ChannelManagerView: React.FC<ChannelManagerViewProps> = ({
           );
         })}
       </div>
+      )}
 
       {/* Compliance Notice Banner */}
       <div className="p-6 rounded-3xl bg-slate-900 text-white space-y-3 border border-slate-800">

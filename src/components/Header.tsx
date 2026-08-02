@@ -13,7 +13,9 @@ import {
   ChevronDown,
   CheckCircle2,
   LogOut,
-  UserCheck
+  UserCheck,
+  RefreshCw,
+  Trash2
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -29,6 +31,8 @@ interface HeaderProps {
   user?: User | null;
   onSignInGoogle?: () => void;
   onSignOut?: () => void;
+  onSyncGoogleChannels?: () => void;
+  onClearAllChannels?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -44,6 +48,8 @@ export const Header: React.FC<HeaderProps> = ({
   user,
   onSignInGoogle,
   onSignOut,
+  onSyncGoogleChannels,
+  onClearAllChannels,
 }) => {
   const [showChannelDropdown, setShowChannelDropdown] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -165,12 +171,36 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={() => {
                   setShowChannelDropdown(false);
+                  onSyncGoogleChannels?.();
+                }}
+                className="w-full px-3 py-2 flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition text-left"
+                id="sync-google-channels-dropdown-btn"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>Sync Google Account Channels</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowChannelDropdown(false);
                   onOpenNewChannelModal();
                 }}
-                className="w-full px-3 py-2.5 flex items-center gap-2 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition"
+                className="w-full px-3 py-2 flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition text-left"
               >
                 <Plus className="w-4 h-4" />
-                Connect New YouTube Channel
+                <span>Connect Custom Channel</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowChannelDropdown(false);
+                  onClearAllChannels?.();
+                }}
+                className="w-full px-3 py-2 flex items-center gap-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition text-left border-t border-slate-100 dark:border-slate-700/60 mt-1 pt-2"
+                id="clear-all-channels-dropdown-btn"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Clear All YouTube Channels</span>
               </button>
             </div>
           )}

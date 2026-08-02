@@ -86,6 +86,18 @@ export async function signInWithGoogle() {
   }
 }
 
+export async function signInWithGoogleWithCredential() {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    const credential = GoogleAuthProvider.credentialFromResult(result);
+    const accessToken = credential?.accessToken;
+    return { user: result.user, accessToken };
+  } catch (error) {
+    console.error('Error signing in with Google via Firebase with credential:', error);
+    throw error;
+  }
+}
+
 export async function logoutUser() {
   try {
     await signOut(auth);
