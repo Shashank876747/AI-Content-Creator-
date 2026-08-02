@@ -198,7 +198,7 @@ export const App: React.FC = () => {
   // Auth Handlers
   const handleSignInGoogle = async () => {
     try {
-      await signInWithGoogle();
+      await handleSyncGoogleChannels();
     } catch (err) {
       console.error('Google Sign-In failed:', err);
     }
@@ -228,6 +228,23 @@ export const App: React.FC = () => {
     setActiveChannel(null);
   };
 
+  const handleDeleteChannel = async (channelId: string) => {
+    if (currentUser) {
+      try {
+        await deleteDoc(doc(db, 'users', currentUser.uid, 'channels', channelId));
+      } catch (err) {
+        console.error('Failed to delete channel from Firestore:', err);
+      }
+    }
+    setChannels((prev) => {
+      const updated = prev.filter((c) => c.id !== channelId);
+      if (activeChannel?.id === channelId) {
+        setActiveChannel(updated.length > 0 ? updated[0] : null);
+      }
+      return updated;
+    });
+  };
+
   const handleSyncGoogleChannels = async () => {
     let user = currentUser;
     let accessToken: string | undefined = undefined;
@@ -235,6 +252,7 @@ export const App: React.FC = () => {
     if (!user) {
       try {
         const res = await signInWithGoogleWithCredential();
+        if (res.cancelled) return;
         user = res.user;
         accessToken = res.accessToken;
       } catch (err) {
@@ -244,6 +262,7 @@ export const App: React.FC = () => {
     } else {
       try {
         const res = await signInWithGoogleWithCredential();
+        if (res.cancelled) return;
         user = res.user;
         accessToken = res.accessToken;
       } catch (e) {
@@ -337,8 +356,16 @@ export const App: React.FC = () => {
       }
     }
 
-    setChannels(fetchedChannels);
-    setActiveChannel(fetchedChannels[0]);
+    setChannels((prev) => {
+      const channelMap = new Map<string, YouTubeChannel>();
+      prev.forEach((c) => channelMap.set(c.id, c));
+      fetchedChannels.forEach((c) => channelMap.set(c.id, c));
+      return Array.from(channelMap.values());
+    });
+
+    if (fetchedChannels.length > 0) {
+      setActiveChannel(fetchedChannels[0]);
+    }
   };
 
   // Channel Actions
@@ -452,6 +479,7 @@ export const App: React.FC = () => {
         onSignInGoogle={handleSignInGoogle}
         onSignOut={handleSignOut}
         onClearAllChannels={handleClearAllChannels}
+        onDeleteChannel={handleDeleteChannel}
         onSyncGoogleChannels={handleSyncGoogleChannels}
       />
 
@@ -477,6 +505,7 @@ export const App: React.FC = () => {
               onOpenVideoStudio={(topic) => handleOpenVideoStudioWithTopic(topic || '')}
               onNavigateToView={setActiveView}
               onOpenNewChannelModal={() => setIsNewChannelModalOpen(true)}
+              onSyncGoogleChannels={handleSyncGoogleChannels}
             />
           )}
 
@@ -490,6 +519,7 @@ export const App: React.FC = () => {
               onUpdateChannelFolder={handleUpdateChannelFolder}
               workspaceFolders={workspaceFolders}
               onClearAllChannels={handleClearAllChannels}
+              onDeleteChannel={handleDeleteChannel}
               onSyncGoogleChannels={handleSyncGoogleChannels}
               user={currentUser}
             />
@@ -566,6 +596,7 @@ export const App: React.FC = () => {
         onClose={() => setIsNewChannelModalOpen(false)}
         onAddChannel={handleAddChannel}
         workspaceFolders={workspaceFolders}
+        onSyncGoogleChannels={handleSyncGoogleChannels}
         onOpenChannelGuide={() => {
           setIsNewChannelModalOpen(false);
           setIsChannelGuideModalOpen(true);

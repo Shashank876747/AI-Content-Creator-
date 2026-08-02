@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   LogOut,
   UserCheck,
+  UserPlus,
   RefreshCw,
   Trash2
 } from 'lucide-react';
@@ -33,6 +34,7 @@ interface HeaderProps {
   onSignOut?: () => void;
   onSyncGoogleChannels?: () => void;
   onClearAllChannels?: () => void;
+  onDeleteChannel?: (channelId: string) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -50,6 +52,7 @@ export const Header: React.FC<HeaderProps> = ({
   onSignOut,
   onSyncGoogleChannels,
   onClearAllChannels,
+  onDeleteChannel,
 }) => {
   const [showChannelDropdown, setShowChannelDropdown] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -139,30 +142,49 @@ export const Header: React.FC<HeaderProps> = ({
               {channels.map((chan) => {
                 const isSelected = activeChannel?.id === chan.id;
                 return (
-                  <button
+                  <div
                     key={chan.id}
-                    onClick={() => {
-                      onSelectChannel(chan);
-                      setShowChannelDropdown(false);
-                    }}
-                    className={`w-full px-3 py-2.5 flex items-center gap-3 text-left hover:bg-slate-100 dark:hover:bg-slate-700/60 transition ${
-                      isSelected ? 'bg-red-500/10 text-red-600 dark:text-red-400 font-medium' : 'text-slate-700 dark:text-slate-300'
-                    }`}
+                    className="flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-700/60 pr-2 transition group"
                   >
-                    <img
-                      src={chan.avatarUrl}
-                      alt={chan.title}
-                      className="w-8 h-8 rounded-full object-cover border border-slate-300 dark:border-slate-600"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-bold truncate">{chan.title}</div>
-                      <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                        {chan.handle} • {(chan.subscribers / 1000).toFixed(1)}k subs
+                    <button
+                      onClick={() => {
+                        onSelectChannel(chan);
+                        setShowChannelDropdown(false);
+                      }}
+                      className={`flex-1 px-3 py-2.5 flex items-center gap-3 text-left transition ${
+                        isSelected ? 'bg-red-500/10 text-red-600 dark:text-red-400 font-medium' : 'text-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      <img
+                        src={chan.avatarUrl}
+                        alt={chan.title}
+                        className="w-8 h-8 rounded-full object-cover border border-slate-300 dark:border-slate-600"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-bold truncate">{chan.title}</div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                          {chan.handle} • {(chan.subscribers / 1000).toFixed(1)}k subs
+                        </div>
                       </div>
-                    </div>
-                    {isSelected && <CheckCircle2 className="w-4 h-4 text-red-500" />}
-                  </button>
+                      {isSelected && <CheckCircle2 className="w-4 h-4 text-red-500 shrink-0" />}
+                    </button>
+                    {onDeleteChannel && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Delete channel "${chan.title}"?`)) {
+                            onDeleteChannel(chan.id);
+                          }
+                        }}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-950/50 transition shrink-0 opacity-80 group-hover:opacity-100"
+                        title="Delete channel"
+                        id={`delete-chan-btn-${chan.id}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 );
               })}
 
@@ -264,6 +286,18 @@ export const Header: React.FC<HeaderProps> = ({
                       </span>
                     </div>
                   </div>
+
+                  <button
+                    onClick={() => {
+                      setShowUserDropdown(false);
+                      onSignInGoogle?.();
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition text-left mt-1"
+                    id="switch-google-account-btn"
+                  >
+                    <UserPlus className="w-4 h-4 text-amber-500" />
+                    Switch / Select Google Account
+                  </button>
 
                   <button
                     onClick={() => {

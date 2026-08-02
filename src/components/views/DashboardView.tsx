@@ -25,6 +25,7 @@ interface DashboardViewProps {
   onOpenVideoStudio: (topic?: string) => void;
   onNavigateToView: (view: any) => void;
   onOpenNewChannelModal: () => void;
+  onSyncGoogleChannels?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -35,6 +36,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenVideoStudio,
   onNavigateToView,
   onOpenNewChannelModal,
+  onSyncGoogleChannels,
 }) => {
   const [quickTopic, setQuickTopic] = useState('');
 
@@ -43,7 +45,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const totalSubscribers = targetChannels.reduce((acc, c) => acc + c.subscribers, 0);
   const totalViews = targetChannels.reduce((acc, c) => acc + c.totalViews, 0);
   const totalRevenue = targetChannels.reduce((acc, c) => acc + c.estMonthlyRevenue, 0);
-  const avgCtr = (targetChannels.reduce((acc, c) => acc + c.avgCtr, 0) / targetChannels.length).toFixed(1);
+  const avgCtr = targetChannels.length > 0 ? (targetChannels.reduce((acc, c) => acc + (c.avgCtr || 0), 0) / targetChannels.length).toFixed(1) : '0.0';
 
   const filteredVideos = activeChannel
     ? videos.filter((v) => v.channelId === activeChannel.id)
@@ -97,6 +99,44 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Decorative elements */}
         <div className="absolute -right-12 -bottom-12 w-64 h-64 rounded-full bg-red-600/10 blur-3xl pointer-events-none"></div>
       </div>
+
+      {channels.length === 0 && (
+        <div className="p-6 rounded-3xl bg-gradient-to-r from-red-500/10 via-amber-500/5 to-slate-900/10 border-2 border-dashed border-red-500/30 dark:border-red-500/20 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-red-600 text-white flex items-center justify-center font-bold shrink-0 shadow-lg shadow-red-500/20">
+              <Tv className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                Link Your YouTube Channel
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 max-w-xl">
+                Connect your real YouTube channel via Google OAuth 2.0 or link by channel handle to sync subscriber stats, videos, and automated publishing.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 shrink-0 w-full sm:w-auto">
+            {onSyncGoogleChannels && (
+              <button
+                onClick={onSyncGoogleChannels}
+                className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-500/20 transition active:scale-95"
+                id="link-yt-google-oauth-btn"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Link Google YouTube Account</span>
+              </button>
+            )}
+            <button
+              onClick={onOpenNewChannelModal}
+              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 text-slate-100 font-bold text-xs border border-slate-700 flex items-center justify-center gap-2 transition"
+              id="link-yt-custom-modal-btn"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Link Custom Handle</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Metric Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

@@ -22,7 +22,8 @@ import firebaseConfig from '../../firebase-applet-config.json';
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 export const auth = getAuth(app);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+const dbId = (firebaseConfig as Record<string, any>).firestoreDatabaseId;
+export const db = dbId ? getFirestore(app, dbId) : getFirestore(app);
 
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.addScope('https://www.googleapis.com/auth/youtube.readonly');
@@ -70,17 +71,27 @@ export async function testFirestoreConnection() {
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
   } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration.");
-    }
+    console.warn("Firestore connection check note:", error instanceof Error ? error.message : error);
   }
+}
+
+export function createGoogleProvider() {
+  const provider = new GoogleAuthProvider();
+  provider.addScope('https://www.googleapis.com/auth/youtube.readonly');
+  provider.setCustomParameters({ prompt: 'select_account' });
+  return provider;
 }
 
 export async function signInWithGoogle() {
   try {
-    const result = await signInWithPopup(auth, googleProvider);
+    const provider = createGoogleProvider();
+    const result = await signInWithPopup(auth, provider);
     return result.user;
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === 'auth/popup-closed-by-user' || error?.code === 'auth/cancelled-popup-request') {
+      console.info('User closed or cancelled the Google authentication popup.');
+      return null;
+    }
     console.error('Error signing in with Google via Firebase:', error);
     throw error;
   }
@@ -88,11 +99,16 @@ export async function signInWithGoogle() {
 
 export async function signInWithGoogleWithCredential() {
   try {
-    const result = await signInWithPopup(auth, googleProvider);
+    const provider = createGoogleProvider();
+    const result = await signInWithPopup(auth, provider);
     const credential = GoogleAuthProvider.credentialFromResult(result);
     const accessToken = credential?.accessToken;
-    return { user: result.user, accessToken };
-  } catch (error) {
+    return { user: result.user, accessToken, cancelled: false };
+  } catch (error: any) {
+    if (error?.code === 'auth/popup-closed-by-user' || error?.code === 'auth/cancelled-popup-request') {
+      console.info('User closed or cancelled the Google authentication popup.');
+      return { user: null, accessToken: undefined, cancelled: true };
+    }
     console.error('Error signing in with Google via Firebase with credential:', error);
     throw error;
   }

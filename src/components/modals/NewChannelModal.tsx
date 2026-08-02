@@ -8,6 +8,7 @@ interface NewChannelModalProps {
   onAddChannel: (channel: YouTubeChannel) => void;
   workspaceFolders: string[];
   onOpenChannelGuide: () => void;
+  onSyncGoogleChannels?: () => void;
 }
 
 export const NewChannelModal: React.FC<NewChannelModalProps> = ({
@@ -16,6 +17,7 @@ export const NewChannelModal: React.FC<NewChannelModalProps> = ({
   onAddChannel,
   workspaceFolders,
   onOpenChannelGuide,
+  onSyncGoogleChannels,
 }) => {
   const [channelTitle, setChannelTitle] = useState('');
   const [handle, setHandle] = useState('');
@@ -25,6 +27,11 @@ export const NewChannelModal: React.FC<NewChannelModalProps> = ({
   if (!isOpen) return null;
 
   const handleConnectOAuth = async () => {
+    if (onSyncGoogleChannels) {
+      onSyncGoogleChannels();
+      onClose();
+      return;
+    }
     try {
       const res = await fetch('/api/auth/url');
       const data = await res.json();

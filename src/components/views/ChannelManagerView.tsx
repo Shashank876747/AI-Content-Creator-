@@ -27,6 +27,7 @@ interface ChannelManagerViewProps {
   onUpdateChannelFolder: (channelId: string, folder: string) => void;
   workspaceFolders: string[];
   onClearAllChannels?: () => void;
+  onDeleteChannel?: (channelId: string) => void;
   onSyncGoogleChannels?: () => void;
   user?: User | null;
 }
@@ -40,6 +41,7 @@ export const ChannelManagerView: React.FC<ChannelManagerViewProps> = ({
   onUpdateChannelFolder,
   workspaceFolders,
   onClearAllChannels,
+  onDeleteChannel,
   onSyncGoogleChannels,
   user,
 }) => {
@@ -231,16 +233,33 @@ export const ChannelManagerView: React.FC<ChannelManagerViewProps> = ({
                   </div>
                 </div>
 
-                <button
-                  onClick={() => onSelectChannel(channel)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
-                    isSelected
-                      ? 'bg-red-600 text-white'
-                      : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
-                  }`}
-                >
-                  {isSelected ? 'Active Workspace' : 'Set Active'}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => onSelectChannel(channel)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                      isSelected
+                        ? 'bg-red-600 text-white'
+                        : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
+                    }`}
+                  >
+                    {isSelected ? 'Active Workspace' : 'Set Active'}
+                  </button>
+                  {onDeleteChannel && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Are you sure you want to delete channel "${channel.title}"?`)) {
+                          onDeleteChannel(channel.id);
+                        }
+                      }}
+                      className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-700/60 transition"
+                      title="Delete this channel"
+                      id={`delete-channel-card-${channel.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Stats Bar */}
